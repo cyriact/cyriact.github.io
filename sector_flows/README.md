@@ -89,6 +89,24 @@ This source is reachable from cloud/CI IPs.
 
 ## 2. NSE bulk/block deals + your own sector join
 
+Implemented across `nse_client.py`, `sector_master.py` and `bulk_deals.py`.
+
+```bash
+python -m sector_flows.bulk_deals --days 30
+python -m sector_flows.bulk_deals --from 2026-04-01 --to 2026-09-30 --net
+python -m sector_flows.bulk_deals --type block_deals --days 90 -o deals.csv
+
+python -m sector_flows.sector_master RELIANCE TCS ASTEC   # inspect the join
+```
+
+Output is a sector table (deal count, distinct symbols, buy/sell/net value in
+₹ Cr, share of gross) plus an optional deal-level CSV with the sector attached.
+Ranges longer than a year are split automatically across NSE's per-request cap.
+
+Symbols that can't be classified are bucketed under `(unclassified)` and listed
+on stderr rather than silently dropped — sector totals always reconcile back to
+the raw total.
+
 ### The deals feed
 
 ```
@@ -142,10 +160,20 @@ You need a symbol → sector master. Options, best first:
 NSE's Akamai edge returns `403 Access Denied` to cloud and CI IPs, including
 this repo's GitHub Actions runners — verified, not theoretical. It also
 requires a cookie bootstrap (hit `https://www.nseindia.com/` with a browser
-User-Agent first, reuse the cookie jar) and a plausible `Referer`.
+User-Agent first, reuse the cookie jar) and a plausible `Referer`. Both are
+handled by `nse_client.py`, which raises `NSEBlocked` with an explanation
+rather than a bare 403 when the block is what it hit.
 
 If you need this in automation, either run it from a residential/India IP, or
 use BSE as the deals source too. NSDL and BSE both answer cloud IPs fine.
+
+**Because of that block, the NSE fetch hop is the one part of this that could
+not be exercised end-to-end here.** The endpoint, parameters and record shape
+were verified against current library source and a live sample payload, and
+everything downstream of the fetch — record parsing, the sector join, netting,
+range splitting, aggregation, CSV output — was tested against real payload
+shapes and live BSE lookups. Expect the first run from an unblocked network to
+be the real test of the fetch itself.
 
 ---
 
