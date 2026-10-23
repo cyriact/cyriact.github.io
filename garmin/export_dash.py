@@ -9,12 +9,58 @@ Each file is an array of row objects, one per dataset on the dashboard.
 """
 
 import json
+from datetime import date, datetime, timedelta, timezone
 
-from build import DATA, compute
+from build import DATA, NOT_TRAINING, SPORT, compute, load
+
+TIMELINE_DAYS = 180
 
 
 def r1(x):
     return None if x is None else round(x, 1)
+
+
+def timeline():
+    """One row per day: hours per sport, sleep stages and score, HRV, resting HR, Body Battery."""
+    acts = load("activities.json", [])
+    sleep = load("sleep.json", {})
+    hrv = load("hrv.json", {})
+    daily = load("daily.json", {})
+    today = date.today()
+    rows = {}
+    for i in range(TIMELINE_DAYS - 1, -1, -1):
+        k = (today - timedelta(days=i)).isoformat()
+        s, h, dl = sleep.get(k), hrv.get(k, {}), daily.get(k, {})
+        bed = None
+        if s and s.get("sleepStartTimestampLocal"):
+            # Garmin encodes local wall-clock time as an epoch, so read it as UTC.
+            t = datetime.fromtimestamp(s["sleepStartTimestampLocal"] / 1000, timezone.utc)
+            bed = round(t.hour + t.minute / 60 - (24 if t.hour >= 15 else 0), 2)
+        hrs = (lambda key: round((s.get(key) or 0) / 3600, 2) if s else None)
+        rows[k] = {
+            "date": k, "swim_h": 0, "bike_h": 0, "run_h": 0, "gym_h": 0, "other_h": 0, "sessions": "",
+            "sleep_h": hrs("sleepTimeSeconds"), "deep_h": hrs("deepSleepSeconds"), "rem_h": hrs("remSleepSeconds"),
+            "light_h": hrs("lightSleepSeconds"), "awake_h": hrs("awakeSleepSeconds"),
+            "sleep_score": (((s or {}).get("sleepScores") or {}).get("overall") or {}).get("value"),
+            "bedtime_h": bed,
+            "hrv_ms": h.get("lastNightAvg"), "hrv_low": (h.get("baseline") or {}).get("balancedLow"),
+            "hrv_high": (h.get("baseline") or {}).get("balancedUpper"),
+            "resting_hr": (dl.get("heartRate") or {}).get("restingValue"),
+            "body_battery": (dl.get("bodyBattery") or {}).get("maxValue"),
+        }
+    col = {"Swim": "swim_h", "Bike": "bike_h", "Run": "run_h", "Strength": "gym_h"}
+    for a in sorted(acts, key=lambda a: a["startTimeLocal"]):
+        k, t = a["startTimeLocal"][:10], a["activityType"]["typeKey"]
+        if k not in rows or t in NOT_TRAINING:
+            continue
+        r = rows[k]
+        h = (a.get("duration") or 0) / 3600
+        c = col.get(SPORT.get(t), "other_h")
+        r[c] = round(r[c] + h, 2)
+        km = (a.get("distance") or 0) / 1000
+        label = t.replace("_", " ").capitalize() + f" {round(h * 60)} min" + (f" · {km:.1f} km" if km > 0.05 else "")
+        r["sessions"] = f"{r['sessions']}; {label}" if r["sessions"] else label
+    return list(rows.values())
 
 
 def main():
@@ -31,22 +77,16 @@ def main():
         "days": [{"date": d["d"], "train_min": d["min"], "strength": 1 if d["strength"] else 0,
                   "sleep_h": r1(d["sleep"]), "sessions": "; ".join(session_text(s) for s in d["s"])}
                  for d in p["cal"]],
-        "recovery": [{"date": r["d"], "sleep_h": r1(r["sleep"]), "bedtime_h": r["bed"], "sleep_score": r["score"],
-                      "hrv_ms": r["hrv"], "hrv_low": r["hrvLo"], "hrv_high": r["hrvHi"], "resting_hr": r["rhr"],
-                      "body_battery": r["bb"], "stress": r["stress"]} for r in p["rec"]],
-        "weeks": [{"week": w["w"], "swim_h": w["Swim"], "bike_h": w["Bike"], "run_h": w["Run"],
-                   "strength_sessions": w["strength"], "training_days": w["days"]} for w in p["weeks"]],
+        "timeline": timeline(),
         "sleep_effect": [{"sleep": b["label"], "nights": b["n"], "body_battery": b["bb"], "stress": b["stress"]}
                          for b in p["buckets"]],
         "longest": [{"sport": s, "km": v["km"], "date": v["d"], "best_km": v["all"]}
                     for s, v in p["longest"].items()],
         "zones": [{"zone": f"Zone {i + 1}", "hours": h} for i, h in enumerate(p["zones"])],
-        "weight": [{"date": w["d"], "kg": w["kg"]} for w in p["weights"]],
-        "fitness": [{"lever": l["label"], "now": l["value"], "target": l["target"], "unit": l["unit"]}
-                    for l in p["fitAge"]["levers"]]
-                   + ([{"lever": "Fitness age", "now": r1(p["fitAge"]["age"]), "target": p["fitAge"]["achievable"],
-                        "unit": "years"}] if p["fitAge"]["age"] else []),
     }
+    for stale in out.glob("*.json"):
+        if stale.stem not in sets:
+            stale.unlink()
     for name, rows in sets.items():
         (out / f"{name}.json").write_text(json.dumps(rows, separators=(",", ":")))
         print(f"{name}: {len(rows)} rows")
