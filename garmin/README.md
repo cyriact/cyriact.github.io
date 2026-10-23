@@ -24,6 +24,26 @@ Personal API into `data/` as JSON. Python 3.10+ standard library only.
 ./refresh.sh --days 90  # smaller first-run window
 ```
 
+`refresh.sh` also rebuilds the dashboard. To rebuild without pulling: `python3 build.py`.
+
+## Dashboard
+
+`build.py` writes `dashboard.html`, one self-contained file that opens in any
+browser (no server). It is gitignored because it contains your health data.
+
+- **Today**: a go-hard / keep-it-easy / recover call from last night's sleep,
+  HRV against your normal range, resting HR against your 30-day average, and Body Battery.
+- **Consistency**: weekly streaks plus a year calendar of every training day,
+  strength session and night's sleep.
+- **Recover**: sleep per night, bedtime against target, HRV, resting HR, and how
+  your sleep length shows up in the next day's Body Battery and stress.
+- **Build**: strength sessions per week, weight, fitness-age levers.
+- **Endure**: swim/bike/run hours per week, longest session vs 70.3 and full
+  Ironman distances, time in heart-rate zones.
+
+Targets (wake time, sleep hours, strength sessions per week) are constants at
+the top of `build.py`.
+
 ## What lands in `data/`
 
 | File | Contents |
