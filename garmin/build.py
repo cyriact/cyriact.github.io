@@ -54,7 +54,8 @@ def mean(xs):
     return st.mean(xs) if xs else None
 
 
-def main():
+def compute():
+    """Everything the dashboard shows, as one dict."""
     acts = load("activities.json", [])
     daily = load("daily.json", {})
     sleep = load("sleep.json", {})
@@ -285,6 +286,11 @@ def main():
         "weights": weights, "fitAge": {"age": fit_age.get("fitnessAge"), "real": fit_age.get("chronologicalAge"),
                                        "achievable": fit_age.get("achievableFitnessAge"), "levers": levers},
     }
+    return payload
+
+
+def main():
+    payload = compute()
     html = TEMPLATE.replace("/*DATA*/null", json.dumps(payload, separators=(",", ":")))
     OUT.write_text(html)
     print(f"Wrote {OUT}")
