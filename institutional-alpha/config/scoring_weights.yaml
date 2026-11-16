@@ -1,0 +1,84 @@
+# 100-point scoring model. Every sub-feature is converted to a cross-sectional percentile rank
+# (0..1) among eligible stocks on the signal date; direction +1 = higher is better, -1 = lower is
+# better. A component score is the mean of its available sub-feature percentiles (0.5 = neutral
+# when a stock has none of them). Total score = sum(weight * component) -> 0..100.
+#
+# Rules are fixed in advance (no per-stock discretion). Qualitative "business quality" factors in the
+# brief (moat, switching costs, customer retention, market opportunity) cannot be measured
+# systematically with the available data and are therefore NOT scored rather than guessed; the
+# component uses measurable proxies listed below.
+
+components:
+  earnings:          # "Earnings inflection" (30)
+    ear: 1                 # 3-day abnormal return around the latest results announcement (proxy for surprise)
+    ear_sum2: 1            # sum of last two announcement reactions
+    ear_accel: 1           # change in announcement reaction (acceleration proxy)
+    ear_pos_4: 1           # share of positive reactions in last 4 announcements
+    rev_g: 1               # --- accounting (Yahoo, available from mid-2024 only) ---
+    rev_accel: 1
+    ebitda_vs_rev_g: 1     # EBITDA growth in excess of revenue growth (operating leverage)
+    pat_g: 1
+    margin_chg: 1
+    ocf_conv: 1
+    turnaround: 1
+  institutional:     # "Institutional activity" (25)
+    d_fii_1q: 1
+    d_mf_1q: 1
+    d_fii_2q: 1
+    d_mf_2q: 1
+    d_insurance_1q: 1
+    inst_acc_streak: 1     # repeat purchases
+    nh_credible_increase_pp: 1   # long-only named-holder buying (block-absorption proxy)
+    nh_n_buyer_families: 1       # institutional diversity
+    nh_buyer_quality: 1
+    absorption_ratio: 1          # absorption of large-holder exits
+    absorb_value_63: 1           # delivery-backed volume shocks without price damage (block proxy)
+    nh_short_horizon_buy_pp: -1  # arbitrage/prop buying is not conviction
+  quality:           # "Business quality" (20) — measurable proxies only
+    vol_1y: -1
+    div_paid_3y: 1
+    roce: 1
+    ocf_conv: 1
+    ebitda_margin: 1
+    debt_to_equity: -1
+  valuation:         # "Valuation" (20)
+    div_yield_ttm: 1
+    rev_36m: -1            # long-horizon reversal (cheapness proxy, full period)
+    earnings_yield: 1      # --- accounting multiples from mid-2024 ---
+    ev_ebitda: -1
+    ev_sales: -1
+    fcf_yield: 1
+    peg: -1
+  price_volume:      # "Price and volume" (5)
+    rs_6m: 1
+    deliv_chg: 1
+    updown_vol_63: 1
+    px_vs_ma200: 1
+    ma50_gt_ma200: 1
+
+weights:
+  base:        {earnings: 30, institutional: 25, quality: 20, valuation: 20, price_volume: 5}
+  equal:       {earnings: 20, institutional: 20, quality: 20, valuation: 20, price_volume: 20}
+  inst_heavy:  {earnings: 20, institutional: 40, quality: 15, valuation: 15, price_volume: 10}
+  earn_heavy:  {earnings: 40, institutional: 20, quality: 15, valuation: 15, price_volume: 10}
+  no_valuation: {earnings: 35, institutional: 30, quality: 25, valuation: 0, price_volume: 10}
+  simple_inst_momentum: {earnings: 0, institutional: 60, quality: 0, valuation: 0, price_volume: 40}
+
+strategies:
+  A_block:        # block/bulk-buying proxy only
+    features: {nh_credible_increase_pp: 1, nh_n_buyer_families: 1, nh_buyer_quality: 1, absorption_ratio: 1,
+               absorb_value_63: 1, absorb_days_63: 1, nh_short_horizon_buy_pp: -1}
+    require_any: [nh_credible_increase_pp, absorb_value_63]
+  B_shareholding:
+    features: {d_fii_1q: 1, d_fii_2q: 1, d_mf_1q: 1, d_mf_2q: 1, d_inst_1q: 1, inst_acc_streak: 1}
+    require_any: [d_inst_1q]
+  C_inst_earnings:   # B + earnings (50/50)
+    blend: {B_shareholding: 0.5, earnings: 0.5}
+    require_any: [d_inst_1q]
+  D_inst_block_earnings:  # A + B + earnings (primary candidate)
+    blend: {A_block: 0.3333, B_shareholding: 0.3333, earnings: 0.3334}
+    require_any: [d_inst_1q]
+  E_full:         # 100-point model (weights.base) + liquidity filter
+    weights: base
+    min_adtv_cr: 2.0
+    require_any: [d_inst_1q]

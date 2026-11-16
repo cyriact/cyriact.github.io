@@ -1,0 +1,90 @@
+{
+  "board_meetings": {
+    "coverage_end": "2026-12-05",
+    "coverage_start": "2012-01-04",
+    "limitations": "Scheduled board-meeting dates (results announcements) as disseminated by NSE.",
+    "n_records": 120682,
+    "path": "data/processed/board_meetings.parquet",
+    "quality_score": 0.8,
+    "retrieval_date": "2026-11-16",
+    "source_url": "PR*.zip (Bm files)"
+  },
+  "corporate_actions": {
+    "coverage_end": "2026-11-25",
+    "coverage_start": "2012-01-03",
+    "limitations": "Dividend amounts and split/bonus/consolidation factors parsed from free-text PURPOSE; factors validated against ex-date price jumps; rights issues not adjusted; demergers neutralised.",
+    "n_records": 67224,
+    "path": "data/processed/corporate_actions.parquet",
+    "quality_score": 0.85,
+    "retrieval_date": "2026-11-16",
+    "source_url": "https://nsearchives.nseindia.com/archives/equities/bhavcopy/pr/PR*.zip (Bc files)"
+  },
+  "fundamentals_yahoo": {
+    "coverage_end": "2026-09-30",
+    "coverage_start": "2021-12-31",
+    "limitations": "SUPPLEMENTARY. ~4 annual periods (FY2023-FY2026) + ~5 quarters; latest restated values (not as-first-reported); current listings only (survivorship). Availability dates are imputed from NSE board-meeting dates or statutory deadlines.",
+    "n_records": 186135,
+    "n_symbols": 1124,
+    "path": "data/processed/fundamentals_yahoo.parquet",
+    "quality_score": 0.6,
+    "retrieval_date": "2026-11-16",
+    "source_url": "https://query1.finance.yahoo.com/ws/fundamentals-timeseries/v1/"
+  },
+  "index_levels": {
+    "coverage_end": "2026-11-13",
+    "coverage_start": "2012-06-01",
+    "limitations": "TRI approximated from price index + NSE published dividend yield (not official TRI). Midcap 150 / Smallcap 250 / Microcap 250 histories start when NSE began publishing them in this file.",
+    "n_records": 22050,
+    "path": "data/processed/index_levels.parquet",
+    "quality_score": 0.9,
+    "retrieval_date": "2026-11-16",
+    "source_url": "https://nsearchives.nseindia.com/content/indices/ind_close_all_DDMMYYYY.csv"
+  },
+  "monthly_panel": {
+    "coverage_end": "2026-11-13",
+    "coverage_start": "2017-12-29",
+    "limitations": "Universe limited to symbols with SHP filings (survivorship gap for delisted names).",
+    "n_eligible_rows": 69200,
+    "n_records": 261207,
+    "path": "data/processed/monthly_panel.parquet",
+    "quality_score": 0.85,
+    "retrieval_date": "2026-11-16",
+    "source_url": "derived"
+  },
+  "prices_daily": {
+    "coverage_end": "2026-11-13",
+    "coverage_start": "2012-01-02",
+    "limitations": "Mainboard EQ/BE/BZ only. Dividends credited from parsed corporate-action text; rare unparsed purposes are missed. Delisted names keep their history until last trade.",
+    "missingness": "delivery missing 0.098",
+    "n_records": 6242820,
+    "n_symbols": 3454,
+    "path": "data/processed/prices_daily.parquet",
+    "quality_score": 0.95,
+    "retrieval_date": "2026-11-16",
+    "source_url": "https://nsearchives.nseindia.com/content/historical/EQUITIES/ ; /content/cm/ ; /archives/equities/mto/"
+  },
+  "shareholding_quarterly": {
+    "coverage_end": "2026-09-30",
+    "coverage_start": "2018-03-31",
+    "limitations": "Category totals per SEBI SHP format; FII = FPI cat I+II (+ foreign SWF in 2022+ taxonomy).",
+    "missingness": "d_inst_1q missing 0.049 (first filing, gaps, IPO quarters)",
+    "n_records": 31178,
+    "n_symbols": 1122,
+    "path": "data/processed/shareholding_quarterly.parquet",
+    "quality_score": 0.85,
+    "retrieval_date": "2026-11-16",
+    "source_url": "derived from shp_xbrl"
+  },
+  "shp_xbrl": {
+    "coverage_end": "2026-10-27",
+    "coverage_start": "2018-01-19",
+    "limitations": "Filings index only covers symbols listed in 2026 (delisted/merged companies such as HDFC, DHFL are absent: survivorship gap). XBRL exists from ~Dec-2017 only. Named holders are only those >1% (SEBI disclosure threshold).",
+    "missingness": "0.000 of filings without total shares",
+    "n_records": 32999,
+    "n_symbols": 1122,
+    "path": "data/processed/shp_*.parquet",
+    "quality_score": 0.85,
+    "retrieval_date": "2026-11-16",
+    "source_url": "https://nsearchives.nseindia.com/corporate/xbrl/ (URLs from aditya-jha/nse-historical-membership filings_index)"
+  }
+}
