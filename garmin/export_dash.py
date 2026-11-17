@@ -63,6 +63,25 @@ def timeline():
     return list(rows.values())
 
 
+def activities(days=365):
+    """Recent activities in the row shape the dashboard's progress charts read."""
+    since = (date.today() - timedelta(days=days)).isoformat()
+    rows = []
+    for a in load("activities.json", []):
+        start = a.get("startTimeLocal") or ""
+        if start[:10] < since:
+            continue
+        rows.append({
+            "id": str(a["activityId"]), "date": start[:10], "start_time": start,
+            "name": a.get("activityName"), "type": a["activityType"]["typeKey"],
+            "distance_meters": a.get("distance"), "duration_seconds": a.get("duration"),
+            "moving_duration_seconds": a.get("movingDuration"),
+            "avg_hr_bpm": a.get("averageHR"), "max_hr_bpm": a.get("maxHR"),
+            "steps": a.get("steps"), "calories": a.get("calories"),
+        })
+    return sorted(rows, key=lambda r: r["start_time"], reverse=True)
+
+
 def main():
     p = compute()
     out = DATA / "dash"
@@ -78,6 +97,7 @@ def main():
                   "sleep_h": r1(d["sleep"]), "sessions": "; ".join(session_text(s) for s in d["s"])}
                  for d in p["cal"]],
         "timeline": timeline(),
+        "activities": activities(),
         "sleep_effect": [{"sleep": b["label"], "nights": b["n"], "body_battery": b["bb"], "stress": b["stress"]}
                          for b in p["buckets"]],
         "longest": [{"sport": s, "km": v["km"], "date": v["d"], "best_km": v["all"]}
