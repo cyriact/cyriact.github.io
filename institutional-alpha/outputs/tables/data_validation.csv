@@ -1,0 +1,14 @@
+check,result,detail
+Trading sessions captured,"3,686",2012-01-02 to 2026-11-13; 244-252 per full calendar year
+NSE PREVCLOSE adjusted for dividends?,No,"99.9% of 2,860 ex-dates with yield >2% have PREVCLOSE = prior close -> dividends added explicitly"
+Split/bonus/consolidation factors applied,953,"from NSE corporate-action records, validated against the ex-date price jump"
+Split-like jumps inferred (no record),415,flagged ca_inferred
+Demerger ex-dates neutralised,108,ex-date return set to 0 (value distributed)
+Dividend events credited,"18,679",cash dividends on ex-date
+Remaining |daily return| > 50% with traded value > Rs 1 cr,19,"AMTEKAUTO 2015-09-11, BCG 2025-07-14, CCAVENUE 2018-09-28, CCCL 2024-09-03, COFFEEDAY 2021-04-26, COREEDUTEC 2013-02-25, INFY 2014-12-02, JETAIRWAYS 2019-06-20"
+Delivery data coverage,90.2%,share of price rows with MTO delivery %
+SHP parser vs external repo parse (promoter %),100.00% within 0.05pp,"32,682 overlapping filings"
+SHP parser vs external repo (reported FII+DII %),100.00% within 0.05pp,2022+ filings where the repo has FII/DII
+External repo's own check vs StockEdge (±0.5pp),"promoter 99.9%, fii 98.09%, dii 94.83%, public 93.95%","6,922 symbol-quarters"
+PIT index membership: current Nifty 500 vs NSE list,499/501 match,"only in NSE list: ['DUMMYHEG', 'MSUMI']; only in repo: []"
+SHP XBRL filings parsed,"32,992","1,122 symbols; 72 URLs returned 404 on the archive"

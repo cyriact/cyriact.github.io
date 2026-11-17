@@ -1,0 +1,16 @@
+# Large / re-downloadable data (rebuilt by run_pipeline.py)
+data/raw/bhavcopy/
+data/raw/mto/
+data/raw/pr/
+data/raw/indices/
+data/raw/shp_xbrl/
+data/raw/external/
+data/processed/*.parquet
+data/metadata/logs/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+data/processed/investor_names_observed.csv
+data/processed/*.duckdb
+data/raw/pr_an/

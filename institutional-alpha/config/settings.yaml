@@ -1,0 +1,72 @@
+# Institutional Alpha — global settings
+# All paths are relative to the project root (institutional-alpha/).
+
+project:
+  name: institutional-alpha
+  as_of_date: "2026-11-13"          # last NSE trading session included in the study
+  random_seed: 20261116
+
+paths:
+  raw: data/raw
+  processed: data/processed
+  reference: data/reference
+  metadata: data/metadata
+  outputs: outputs
+  # External, CC0-licensed dataset cloned from GitHub (filings index + PIT membership)
+  ext_membership_repo: data/raw/external/nse-historical-membership
+
+acquisition:
+  start_date: "2012-01-01"
+  end_date: "2026-11-13"
+  nse_archive_base: "https://nsearchives.nseindia.com"
+  user_agent: "Mozilla/5.0 (research; institutional-alpha backtest)"
+  workers: 4                         # concurrent connections (polite)
+  min_interval_s: 0.25               # per-worker delay between requests
+  retries: 4
+  timeout_s: 40
+  udiff_switch_date: "2024-07-08"    # first date of NSE UDiFF bhavcopy format
+  shp_first_period: "2017-12"        # first SHP quarter for which XBRL filings exist in volume
+  external_repo_url: "https://github.com/aditya-jha/nse-historical-membership"
+
+universe:
+  series: ["EQ", "BE", "BZ"]         # NSE mainboard series (SME 'SM'/'ST' excluded)
+  min_history_days: 120              # trading days of price history before eligible
+  min_median_traded_value_cr: 1.0    # 63-day median daily traded value (Rs crore)
+  max_mcap_rank: 750                 # top-N by full market cap (approx. AMFI large+mid+small)
+  large_cap_rank: 100                # AMFI/SEBI style: 1-100 large
+  mid_cap_rank: 250                  # 101-250 mid; 251+ small
+  exclude_symbols_regex: "(BEES|ETF|IETF|GOLD|LIQUID|NIFTY|SENSEX)$"
+
+shareholding:
+  # Revised filings: the original submission date is used as the availability date
+  # (revisions are usually clerical). Set to true to use the (later) revision broadcast date.
+  use_revision_broadcast_date: false
+  availability_lag_sessions: 1       # act on the session AFTER the public broadcast
+
+backtest:
+  start: "2018-07-01"                # first month-end with >=2 PIT shareholding quarters available
+  end: "2026-10-30"
+  rebalance: "M"                     # M = monthly (also Q tested)
+  top_n: 20
+  max_weight: 0.05
+  max_cash: 0.10
+  dev_end: "2021-12-31"             # development sample
+  val_end: "2023-12-31"             # validation sample; OOS thereafter
+
+costs:
+  # Round-trip components applied per side (buy or sell) as a fraction of traded value.
+  brokerage_bps: 3.0                 # institutional-style discount brokerage
+  stt_buy_bps: 10.0                  # delivery STT 0.1% on buy
+  stt_sell_bps: 10.0                 # delivery STT 0.1% on sell
+  exchange_txn_bps: 0.297            # NSE transaction charge 0.00297%
+  sebi_fee_bps: 0.01                 # Rs 10 / crore
+  gst_rate: 0.18                     # on brokerage + exchange + SEBI fees
+  stamp_duty_buy_bps: 1.5            # 0.015% on buy
+  slippage_bps:                      # one-way slippage + impact by market-cap bucket
+    large: 10
+    mid: 25
+    small: 50
+
+benchmarks:
+  primary: "Nifty 500"
+  secondary: ["Nifty 50", "Nifty Midcap 150", "Nifty Smallcap 250"]
