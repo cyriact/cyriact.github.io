@@ -2,9 +2,12 @@
 
 ## Garmin data
 
-There is no Garmin connector to rely on. Get Garmin data with the scripts in `garmin/`, which call
-Garmin's official, read-only Personal API with the `GARMIN_PERSONAL_API_KEY` environment variable
-(set in the cloud environment; locally it can live in `garmin/.env.local`). Never print the key.
+`garmin/connector/` is a Cloudflare Worker MCP connector (tools `garmin_today`, `garmin_sleep`,
+`garmin_hrv`, `garmin_daily`, `garmin_activities`, ...). When the Garmin connector's tools are loaded
+in a session, use them for quick questions. If they aren't loaded or fail to connect, or you need
+bulk history, use the scripts in `garmin/`. Both call Garmin's official, read-only Personal API with
+the `GARMIN_PERSONAL_API_KEY` environment variable (set in the cloud environment; locally it can live
+in `garmin/.env.local`; on the Worker it is a secret). Never print the key.
 
 - `cd garmin && TZ=Asia/Kolkata python3 pull.py` saves (or tops up) history in `garmin/data/`:
   `activities.json` (list), and `daily.json`, `sleep.json`, `hrv.json`, `weight.json` (keyed by date),
