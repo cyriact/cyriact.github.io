@@ -44,6 +44,12 @@ browser (no server). It is gitignored because it contains your health data.
 Targets (wake time, sleep hours, strength sessions per week) are constants at
 the top of `build.py`.
 
+## Claude connector
+
+`connector/` is a Cloudflare Worker that gives Claude live, read-only access to the same data
+as a custom connector, so you can ask about sleep, HRV or training from any Claude app without
+running these scripts. Setup and security: [connector/README.md](connector/README.md).
+
 ## What lands in `data/`
 
 | File | Contents |

@@ -1,0 +1,20 @@
+{
+  // Garmin MCP connector. Secrets (set with `npx wrangler secret put NAME`, never in this file):
+  //   GARMIN_PERSONAL_API_KEY  your Garmin Personal API key
+  //   CONNECTOR_PASSWORD       the password you type when Claude connects (12+ characters)
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "garmin-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "workers_dev": true,
+  "preview_urls": false,
+  // OAuth grants and tokens (stored hashed), the cached Garmin bearer token, sign-in attempt counter.
+  // Created on the first deploy. To deploy to another Cloudflare account, delete "id" and a new one is made.
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "c558ea8a3e1748e79284fa2cb43b6a2c" }],
+  "vars": {
+    "TZ": "Asia/Kolkata",
+    "ALLOWED_REDIRECT_HOSTS": "claude.ai,claude.com"
+  },
+  "observability": { "enabled": true }
+}
