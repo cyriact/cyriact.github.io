@@ -1,10 +1,10 @@
 // Garmin MCP connector: a Cloudflare Worker that claude.ai connects to.
-//   /mcp        MCP endpoint (Streamable HTTP, stateless). Needs an OAuth token.
+//   /mcp        MCP endpoint (MCP 2026-07-28 and 2025-era Streamable HTTP, stateless). Needs an OAuth token.
 //   /authorize  password-protected sign-in and consent page.
 //   /token, /register, /.well-known/*  served by the OAuth library.
 
 import OAuthProvider from "@cloudflare/workers-oauth-provider";
-import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+import { createMcpHandler, type McpHttpHandler } from "@modelcontextprotocol/server";
 import { SCOPE, handleAuthorize, passwordVersion, type AuthEnv } from "./auth";
 import { buildServer, type ToolEnv } from "./tools";
 
@@ -26,16 +26,22 @@ const mcpHandler = {
         },
       });
     }
-    if (request.method !== "POST") {
-      // Stateless server: no server-to-client stream and no sessions to delete.
-      return new Response(null, { status: 405, headers: { Allow: "POST" } });
-    }
-    const server = buildServer(env);
-    const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
-    await server.connect(transport);
-    return transport.handleRequest(request);
+    return handlerFor(env).fetch(request);
   },
 };
+
+// One MCP handler per isolate. It serves both protocol eras from the same tools:
+// 2026-07-28 (per-request envelope, server/discover) and 2025-era clients
+// (initialize handshake), each request on a fresh, stateless server instance.
+const handlers = new WeakMap<Env, McpHttpHandler>();
+function handlerFor(env: Env): McpHttpHandler {
+  let h = handlers.get(env);
+  if (!h) {
+    h = createMcpHandler(() => buildServer(env), { legacy: "stateless", onerror: (e) => console.error("mcp:", e.message) });
+    handlers.set(env, h);
+  }
+  return h;
+}
 
 const defaultHandler = {
   async fetch(request: Request, env: Env & { OAUTH_PROVIDER: AuthEnv["OAUTH_PROVIDER"] }): Promise<Response> {

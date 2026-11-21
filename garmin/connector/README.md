@@ -5,6 +5,10 @@ read your Garmin data on demand. It calls the same official, read-only Garmin Pe
 `../pull.py`, fetches only what a question needs, and trims Garmin's verbose records to the
 fields that matter, so most answers need one or two calls of about 0.2 s each.
 
+It speaks the current MCP protocol (2026-07-28, which Claude tries first) and the 2025 versions,
+through the official v2 SDK (`@modelcontextprotocol/server`), statelessly: every request gets a
+fresh server instance, so nothing is kept between calls.
+
 ## Tools
 
 | Tool | What it returns | Default range |
@@ -96,8 +100,8 @@ CONNECTOR_PASSWORD=... npm run e2e         # in another terminal
 
 `test/e2e.mjs` runs the same sequence as claude.ai: discovery, client registration, the
 password page (wrong password, a non-Claude redirect, then the right password), token
-exchange, every tool, and token refresh. It prints timings and sizes, not your data (`--show`
-prints the data). Point it at a deployed Worker with `node test/e2e.mjs https://...workers.dev`.
+exchange, every tool, the 2026-07-28 protocol through the official v2 client, and token refresh.
+It prints timings and sizes, not your data (`--show` prints the data). Point it at a deployed Worker with `node test/e2e.mjs https://...workers.dev`.
 
 ## Files
 

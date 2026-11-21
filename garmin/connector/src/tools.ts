@@ -1,8 +1,8 @@
 // MCP tools. Each one fetches only what the question needs and trims Garmin's
 // verbose records to the fields that matter, with units in the field names.
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { CfWorkerJsonSchemaValidator } from "@modelcontextprotocol/sdk/validation/cfworker";
+import { McpServer } from "@modelcontextprotocol/server";
+import { CfWorkerJsonSchemaValidator } from "@modelcontextprotocol/server/validators/cf-worker";
 import { z } from "zod";
 import {
   GarminEnv,
@@ -355,7 +355,7 @@ export function buildServer(env: ToolEnv): McpServer {
       description:
         "Readiness for today: last night's sleep, HRV against the user's normal range, resting HR against the 30-day average, " +
         "Body Battery, a go-hard / keep-it-easy / recover call (same rules as the user's dashboard), and the last 3 days of training.",
-      inputSchema: {},
+      inputSchema: z.object({}),
       annotations: READ_ONLY,
     },
     guarded(async () => {
@@ -395,7 +395,7 @@ export function buildServer(env: ToolEnv): McpServer {
       description:
         "Sleep per night (date = the morning woken up): duration, sleep score, bedtime and wake time, stages, overnight HR, stress, " +
         "respiration, SpO2, sleep need. Defaults to the last 7 nights. Long ranges can be grouped by week or month.",
-      inputSchema: { ...RANGE, group_by: GROUP },
+      inputSchema: z.object({ ...RANGE, group_by: GROUP }),
       annotations: READ_ONLY,
     },
     guarded(async (a: any) => {
@@ -435,7 +435,7 @@ export function buildServer(env: ToolEnv): McpServer {
       description:
         "Overnight heart-rate variability per night: last-night average, 5-minute high, 7-day average, the user's normal (balanced) range, and status. " +
         "Defaults to the last 14 nights.",
-      inputSchema: { ...RANGE, group_by: GROUP },
+      inputSchema: z.object({ ...RANGE, group_by: GROUP }),
       annotations: READ_ONLY,
     },
     guarded(async (a: any) => {
@@ -470,7 +470,7 @@ export function buildServer(env: ToolEnv): McpServer {
       description:
         "Per day: steps, resting HR, min/max HR, stress, Body Battery (high, low, charged, drained, latest), intensity minutes, calories, floors, " +
         "respiration, SpO2. Defaults to the last 7 days.",
-      inputSchema: { ...RANGE, group_by: GROUP },
+      inputSchema: z.object({ ...RANGE, group_by: GROUP }),
       annotations: READ_ONLY,
     },
     guarded(async (a: any) => {
@@ -506,12 +506,12 @@ export function buildServer(env: ToolEnv): McpServer {
         "Workouts newest first: type, distance, duration, pace or speed, HR, time in HR zones, training effect, elevation, power, strength sets. " +
         "Defaults to the last 14 days. Filter by sport (Run, Bike, Swim, Strength, Other) or Garmin type key (e.g. trail_running). " +
         "group_by week or month returns training volume per sport instead of individual sessions.",
-      inputSchema: {
+      inputSchema: z.object({
         ...RANGE,
         sport: z.string().optional().describe("Run, Bike, Swim, Strength, Other, or a Garmin type key such as lap_swimming."),
         limit: z.number().int().min(1).max(200).optional().describe("Most sessions to list (default 30). Ignored when grouping."),
         group_by: z.enum(["session", "week", "month"]).optional().describe("Individual sessions (default) or totals per week/month."),
-      },
+      }),
       annotations: READ_ONLY,
     },
     guarded(async (a: any) => {
@@ -560,7 +560,7 @@ export function buildServer(env: ToolEnv): McpServer {
     {
       title: "One activity",
       description: "Full summary of one activity by its id (from garmin_activities), including min HR, recovery HR and temperature.",
-      inputSchema: { activity_id: z.number().int().describe("activity id") },
+      inputSchema: z.object({ activity_id: z.number().int().describe("activity id") }),
       annotations: READ_ONLY,
     },
     guarded(async (a: any) => {
@@ -587,7 +587,7 @@ export function buildServer(env: ToolEnv): McpServer {
     {
       title: "Weight",
       description: "Weigh-ins in kg (with BMI and body composition when the scale records them). Defaults to the last 365 days.",
-      inputSchema: RANGE,
+      inputSchema: z.object(RANGE),
       annotations: READ_ONLY,
     },
     guarded(async (a: any) => {
@@ -616,7 +616,7 @@ export function buildServer(env: ToolEnv): McpServer {
     {
       title: "Fitness age and HR zones",
       description: "Garmin fitness age with the levers that would lower it, and heart-rate zone floors per sport.",
-      inputSchema: {},
+      inputSchema: z.object({}),
       annotations: READ_ONLY,
     },
     guarded(async () => {

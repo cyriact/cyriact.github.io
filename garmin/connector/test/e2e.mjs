@@ -116,7 +116,11 @@ async function rpc(method, params, timeIt) {
   const ms = performance.now() - t;
   let body;
   try {
-    body = JSON.parse(text);
+    // 2025-era answers may come as a single JSON body or as an SSE stream.
+    const json = (res.headers.get("content-type") || "").includes("text/event-stream")
+      ? text.split("\n").filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim()).pop()
+      : text;
+    body = JSON.parse(json);
   } catch {
     body = { raw: text.slice(0, 300) };
   }
@@ -160,7 +164,30 @@ if (firstActivity) {
   if (SHOW) console.log(x.body.result?.content?.[0]?.text);
 }
 
-// 6. Refresh
+// 6. The current protocol (2026-07-28: server/discover and a per-request envelope, no initialize),
+//    through the official v2 client pinned to it, as Claude's newer clients connect.
+{
+  const { Client, StreamableHTTPClientTransport } = await import("@modelcontextprotocol/client");
+  const modern = new Client({ name: "e2e-modern", version: "1" }, { versionNegotiation: { mode: { pin: "2026-07-28" } } });
+  const t = performance.now();
+  try {
+    await modern.connect(
+      new StreamableHTTPClientTransport(new URL(BASE + "/mcp"), { requestInit: { headers: { Authorization: "Bearer " + tok.access_token } } }),
+    );
+    check(modern.getNegotiatedProtocolVersion() === "2026-07-28", `modern client connects (protocol ${modern.getNegotiatedProtocolVersion()})`);
+    const listed = await modern.listTools();
+    check(listed.tools.length === 8, `modern tools/list: ${listed.tools.length} tools`);
+    const res = await modern.callTool({ name: "garmin_today", arguments: {} });
+    check(!res.isError && res.content?.[0]?.type === "text", `modern garmin_today ${((performance.now() - t) / 1000).toFixed(2)}s`);
+    if (SHOW) console.log(res.content?.[0]?.text);
+  } catch (e) {
+    check(false, `modern client: ${e?.message || e}`);
+  } finally {
+    await modern.close().catch(() => {});
+  }
+}
+
+// 7. Refresh
 r = await fetch(asm.token_endpoint, {
   method: "POST",
   headers: { "Content-Type": "application/x-www-form-urlencoded" },
